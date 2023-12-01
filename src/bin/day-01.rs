@@ -1,73 +1,111 @@
-use regex;
-
 use std::{fmt::Display, io};
 
 fn main() -> io::Result<()> {
-    println!("solution one: {}", solve(INPUT_ONE)?);
+    println!("solution: {}", solve(INPUT_ONE)?);
     Ok(())
 }
 
 fn solve(s: &str) -> io::Result<i32> {
-    let line_parser = LineParser::new();
     s.lines()
         .filter(|l| !l.is_empty())
-        .try_fold(0, |acc, line| line_parser.parse(line).map(|n| n + acc))
+        .try_fold(0, |acc, line| {
+            LineParser::new().parse(line).map(|n| n + acc)
+        })
         .map_err(|e| io::Error::new(io::ErrorKind::Other, e))
 }
 
-struct LineParser(regex::Regex);
+struct LineParser {
+    current_pos: usize,
+    first_digit: Option<i32>,
+    second_digit: Option<i32>,
+}
 
 type ParseResult = Result<i32, ParseError>;
 
 impl LineParser {
     fn new() -> Self {
+        LineParser {
+            current_pos: 0,
+            first_digit: None,
+            second_digit: None,
+        }
+    }
+
+    fn parse(mut self, s: &str) -> ParseResult {
+        while self.current_pos < s.len() {
+            self.parse_step(s)?;
+        }
+
+        let first_digit = self.first_digit.ok_or(ParseError::NoDigitsFound)?;
+
         // problem statement _appears_ to guarantee that the numbers embedded on each line are 2-digit
         // > On each line, the calibration value can be found by combining the first digit and the last digit (in that order) to form a single two-digit number.
         // _however_ the first example (in the first test below) immediately contradicts this:
         // the last line of the input contains only a single digit, 7, but the explanation and
         // provided correct value indicate we should instead treat that single 7 as both the
         // first and second digits of a two digit number, i.e. "77."
-        let regex = regex::Regex::new(
-            r"(?x) # enable verbose mode
-            ^\D* # skip any leading non-digit text
-            # match one of two patterns
-            (
-              # EITHER
-              # there are two digits with non-digit content between them 
-              (?<first_digit>\d)
-              .*
-              (?<second_digit>\d)
-              # OR
-              |
-              # there is a single digit - this will be duplicated to produce a 2 digit number
-              (?<only_digit>\d)
-              .*
-            )
-            \D* # skip any trailing non-digit text
-            $",
-        )
-        .expect("INVALID REGEXP");
-        LineParser(regex)
+        let second_digit = self.second_digit.unwrap_or(first_digit);
+        dbg!(s);
+        Ok(dbg!((dbg!(first_digit) * 10) + (dbg!(second_digit))))
     }
 
-    fn parse(&self, s: &str) -> ParseResult {
-        let caps = self.0.captures(s).ok_or(ParseError::InvalidString)?;
-
-        let digit = if let Some(only_digit) = caps.name("only_digit").map(|m| m.as_str()) {
-            only_digit.to_string() + only_digit
-        } else {
-            let first = caps
-                .name("first_digit")
-                .ok_or(ParseError::NoDigitsFound)?
-                .as_str();
-            let second = caps
-                .name("second_digit")
-                .map(|m| m.as_str())
-                .unwrap_or(first);
-            first.to_owned() + second
+    fn parse_step(&mut self, s: &str) -> Result<(), ParseError> {
+        match &s[self.current_pos..self.current_pos + 1] {
+            dig_str @ ("1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9") => {
+                let digit = str::parse(dig_str).unwrap();
+                self.insert_digit(digit);
+                self.current_pos += 1;
+            }
+            _ if s[self.current_pos..].starts_with("one") => {
+                self.current_pos += 3;
+                self.insert_digit(1);
+            }
+            _ if s[self.current_pos..].starts_with("two") => {
+                self.current_pos += 3;
+                self.insert_digit(2);
+            }
+            _ if s[self.current_pos..].starts_with("three") => {
+                self.current_pos += 5;
+                self.insert_digit(3);
+            }
+            _ if s[self.current_pos..].starts_with("four") => {
+                self.current_pos += 4;
+                self.insert_digit(4)
+            }
+            _ if s[self.current_pos..].starts_with("five") => {
+                self.current_pos += 4;
+                self.insert_digit(5);
+            }
+            _ if s[self.current_pos..].starts_with("six") => {
+                self.current_pos += 3;
+                self.insert_digit(6)
+            }
+            _ if s[self.current_pos..].starts_with("seven") => {
+                self.current_pos += 5;
+                self.insert_digit(7);
+            }
+            _ if s[self.current_pos..].starts_with("eight") => {
+                self.current_pos += 5;
+                self.insert_digit(8);
+            }
+            _ if s[self.current_pos..].starts_with("nine") => {
+                self.current_pos += 4;
+                self.insert_digit(9);
+            }
+            _ => {
+                self.current_pos += 1;
+            }
         };
 
-        str::parse(&digit).or(Err(ParseError::DigitParseFailed))
+        Ok(())
+    }
+
+    fn insert_digit(&mut self, digit: i32) {
+        if self.first_digit.is_none() {
+            self.first_digit.insert(digit)
+        } else {
+            self.second_digit.insert(digit)
+        };
     }
 }
 
@@ -100,6 +138,21 @@ treb7uchet
 "#;
 
     assert_eq!(142, solve(&input).expect("FAILED TO SOLVE TEST"));
+}
+
+#[test]
+fn test_example_two() {
+    let input = r#"
+two1nine
+eightwothree
+abcone2threexyz
+xtwone3four
+4nineeightseven2
+zoneight234
+7pqrstsixteen
+"#;
+
+    assert_eq!(281, solve(&input).expect("FAILED TO SOLVE TEST"));
 }
 
 const INPUT_ONE: &'static str = r#"
