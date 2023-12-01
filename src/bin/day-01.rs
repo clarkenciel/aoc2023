@@ -56,16 +56,25 @@ impl LineParser {
                 self.insert_digit(digit);
                 self.current_pos += 1;
             }
+            // for some of these we don't advance the full length of the
+            // english word. That's because some english number words end
+            // with a letter that begins another english number word.
+            // In that case we wouldn't want to risk overlooking the
+            // subsequent word after parsing the current word.
+            //
+            // E.g. if the string were 1threeight we want to make sure
+            // we don't skip the "eight" because parsing "three" leaves
+            // our parser looking at "ight!"
             _ if s[self.current_pos..].starts_with("one") => {
-                self.current_pos += 3;
+                self.current_pos += 2;
                 self.insert_digit(1);
             }
             _ if s[self.current_pos..].starts_with("two") => {
-                self.current_pos += 3;
+                self.current_pos += 2;
                 self.insert_digit(2);
             }
             _ if s[self.current_pos..].starts_with("three") => {
-                self.current_pos += 5;
+                self.current_pos += 4;
                 self.insert_digit(3);
             }
             _ if s[self.current_pos..].starts_with("four") => {
@@ -73,7 +82,7 @@ impl LineParser {
                 self.insert_digit(4)
             }
             _ if s[self.current_pos..].starts_with("five") => {
-                self.current_pos += 4;
+                self.current_pos += 3;
                 self.insert_digit(5);
             }
             _ if s[self.current_pos..].starts_with("six") => {
@@ -85,11 +94,11 @@ impl LineParser {
                 self.insert_digit(7);
             }
             _ if s[self.current_pos..].starts_with("eight") => {
-                self.current_pos += 5;
+                self.current_pos += 4;
                 self.insert_digit(8);
             }
             _ if s[self.current_pos..].starts_with("nine") => {
-                self.current_pos += 4;
+                self.current_pos += 3;
                 self.insert_digit(9);
             }
             _ => {
