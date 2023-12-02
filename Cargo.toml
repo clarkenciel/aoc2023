@@ -8,5 +8,8 @@ edition = "2021"
 [[bin]]
 name = "day-01"
 
+[[bin]]
+name = "day-02"
+
 [dependencies]
 regex = "1.10.2"
