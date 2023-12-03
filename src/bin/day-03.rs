@@ -81,29 +81,20 @@ fn build_part_index(input: &str) -> PartIndex {
         input
             .lines()
             .enumerate()
-            .flat_map(|line| part_points_in_line(&line_re, line))
+            .flat_map(|(y, line)| {
+                line_re.find_iter(line).flat_map(move |m| {
+                    let id_str = m.as_str();
+                    let start = m.start();
+                    m.range().map(move |x| {
+                        PartPoint::new(
+                            [x as i32, y as i32],
+                            (str::parse(id_str).unwrap(), [start as i32, y as i32]),
+                        )
+                    })
+                })
+            })
             .collect(),
     )
-}
-
-fn part_points_in_line(
-    line_re: &Regex,
-    (y, line): (usize, &str),
-) -> impl Iterator<Item = PartPoint> {
-    line_re
-        .find_iter(line)
-        .flat_map(|m| {
-            let id_str = m.as_str();
-            let start = m.start();
-            m.range().map(move |x| {
-                PartPoint::new(
-                    [x as i32, y as i32],
-                    (str::parse(id_str).unwrap(), [start as i32, y as i32]),
-                )
-            })
-        })
-        .collect::<Vec<PartPoint>>()
-        .into_iter()
 }
 
 type PartId = usize;
