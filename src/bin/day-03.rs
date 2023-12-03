@@ -8,6 +8,10 @@ fn main() -> io::Result<()> {
         "pt. 1 {}",
         part_one(INPUT_ONE).map_err(|e| io::Error::new(io::ErrorKind::Other, e))?
     );
+    println!(
+        "pt. 2 {}",
+        part_two(INPUT_ONE).map_err(|e| io::Error::new(io::ErrorKind::Other, e))?
+    );
     Ok(())
 }
 
@@ -38,11 +42,46 @@ fn part_one(input: &str) -> SolutionResult {
     println!("{:?}", symbol_coords);
     Ok(symbol_coords
         .iter()
-        .flat_map(|coord| find_neighbors(&part_index, coord))
+        .flat_map(|coord| find_neighboring_part_ids(&part_index, coord))
         .sum())
 }
 
-fn find_neighbors(part_index: &PartIndex, [x, y]: &Coord) -> impl Iterator<Item = PartId> {
+fn part_two(input: &str) -> SolutionResult {
+    let safe_input = input.trim();
+    let symbol_coords = find_symbol_coords(safe_input);
+    let part_index = build_part_index(safe_input);
+    println!("{:?}", symbol_coords);
+
+    let input_width = safe_input.lines().nth(0).unwrap().len();
+    Ok(symbol_coords
+        .iter()
+        .filter_map(|coord| {
+            let symbol = lookup_symbol(coord, input_width, safe_input);
+            let neighbors = find_neighboring_part_ids(&part_index, coord).collect::<Vec<PartId>>();
+            
+            // a gear
+            if neighbors.len() == 2 && symbol == "*" {
+                let (a, b) = neighbors.get(0).zip(neighbors.get(1)).unwrap();
+                Some(a * b)
+            } else {
+                None
+            }
+        })
+        .sum())
+}
+
+fn lookup_symbol<'s>(coord: &[i32; 2], input_width: usize, safe_input: &'s str) -> &'s str {
+    let i = coord[0] as usize // x offset
+     + (coord[1] as usize * input_width)   // y offset
+     + coord[1] as usize; // + extra newline characters (maybe only valid on *nix....)
+    let symbol = safe_input.get(i..i + 1).unwrap();
+    symbol
+}
+
+fn find_neighboring_part_ids(
+    part_index: &PartIndex,
+    [x, y]: &Coord,
+) -> impl Iterator<Item = PartId> {
     let envelope = rstar::AABB::from_corners([x - 1, y - 1], [x + 1, y + 1]);
 
     part_index
@@ -145,11 +184,12 @@ fn example_one() {
 .664.598..
 "#;
 
-    assert_eq!(4361, part_one(input).unwrap())
+    assert_eq!(4361, part_one(input).unwrap());
+    assert_eq!(467835, part_two(input).unwrap())
 }
 
 #[test]
-fn example_one_two() {
+fn example_two() {
     let input = r#"
 12.......*..
 +.........34
@@ -166,6 +206,7 @@ fn example_one_two() {
 "#;
 
     assert_eq!(925, part_one(input).unwrap());
+    assert_eq!(6756, part_two(input).unwrap())
 }
 
 const INPUT_ONE: &'static str = r#"
