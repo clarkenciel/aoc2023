@@ -28,7 +28,7 @@ fn main() -> io::Result<()> {
 ///       ...234..
 ///
 ///   `123` and `234` are both adjacent to `*`, but `10` isn't.
-/// 
+///
 /// This solution builds an R*Tree spatial index of the part IDs and
 /// then queries that index for neighbors of each found symbol.
 fn part_one(input: &str) -> SolutionResult {
@@ -57,25 +57,16 @@ fn find_neighbors(part_index: &PartIndex, [x, y]: &Coord) -> impl Iterator<Item 
 }
 
 fn find_symbol_coords(input: &str) -> Vec<Coord> {
+    let line_re = Regex::new(r"([^.[:alnum:]])").unwrap();
     input
         .lines()
         .enumerate()
         .flat_map(|(y, line)| {
-            line.char_indices()
-                .filter_map(|(x, cell)| {
-                    if is_symbol(cell) {
-                        Some([x as i32, y as i32])
-                    } else {
-                        None
-                    }
-                })
-                .collect::<Vec<Coord>>()
+            line_re
+                .find_iter(line)
+                .map(move |m| [m.start() as i32, y as i32])
         })
         .collect()
-}
-
-fn is_symbol(c: char) -> bool {
-    !(c.is_alphanumeric() || c == '.')
 }
 
 type Coord = [i32; 2];
