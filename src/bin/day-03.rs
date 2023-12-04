@@ -1,4 +1,4 @@
-use std::{collections::HashSet, error::Error, fmt::Display, io};
+use std::{collections::HashSet, io};
 
 use regex::Regex;
 use rstar;
@@ -144,18 +144,7 @@ type PartIdSpanStart = Coord;
 /// its location so that we can deduplicate these better.
 type SpannedPartId = (PartId, PartIdSpanStart);
 
-type SolutionResult = Result<usize, SolutionError>;
-
-#[derive(Debug)]
-enum SolutionError {}
-
-impl Error for SolutionError {}
-
-impl Display for SolutionError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Solution finding failed",)
-    }
-}
+type SolutionResult = Result<usize, aoc2023::err::SolutionError>;
 
 #[test]
 fn example_one() {
