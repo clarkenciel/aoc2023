@@ -20,6 +20,9 @@ name = "day-04"
 [[bin]]
 name = "day-05"
 
+[[bin]]
+name = "day-06"
+
 [dependencies]
 regex = "1.10.2"
 rstar = "0.11.0"
